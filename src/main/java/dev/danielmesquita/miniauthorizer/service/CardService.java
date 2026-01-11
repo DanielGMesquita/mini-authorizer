@@ -3,6 +3,9 @@ package dev.danielmesquita.miniauthorizer.service;
 import dev.danielmesquita.miniauthorizer.dto.CardDTO;
 import dev.danielmesquita.miniauthorizer.entity.Card;
 import dev.danielmesquita.miniauthorizer.repository.CardRepository;
+import org.springframework.context.annotation.Bean;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,10 +20,15 @@ public class CardService {
     this.repository = repository;
   }
 
+  @Bean
+  public PasswordEncoder passwordEncoder() {
+    return new BCryptPasswordEncoder();
+  }
+
   public CardDTO createCard(CardDTO cardDTO) {
     Card entity = new Card();
     entity.setCardNumber(cardDTO.getCardNumber());
-    entity.setPassword(cardDTO.getPassword());
+    entity.setPassword(passwordEncoder().encode(cardDTO.getPassword()));
     entity.setBalance(new BigDecimal("0")); // Initial balance
 
     entity = repository.save(entity);
