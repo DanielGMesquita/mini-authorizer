@@ -11,18 +11,24 @@ public class Card {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+
+  @Column(nullable = false, unique = true)
   private String cardNumber;
 
   private String cardHolderName;
+
+  private String password;
 
   @Column(nullable = false)
   private BigDecimal balance;
 
   public Card() {}
 
-  public Card(String cardNumber, String cardHolderName, BigDecimal balance) {
+  public Card(String cardNumber, String cardHolderName, String password, BigDecimal balance) {
     this.cardNumber = cardNumber;
     this.cardHolderName = cardHolderName;
+    this.password = password;
     this.balance = balance;
   }
 
@@ -40,6 +46,10 @@ public class Card {
 
   public void setCardHolderName(String cardHolderName) {
     this.cardHolderName = cardHolderName;
+  }
+
+  public String getPassword() {
+    return password;
   }
 
   public BigDecimal getBalance() {
