@@ -25,7 +25,7 @@ public class CardController {
     return ResponseEntity.ok(cardService.getBalance(cardNumber));
   }
 
-  @PostMapping("/create")
+  @PostMapping
   public ResponseEntity<CardDTO> createCard(@Valid @RequestBody CardDTO cardDTO) {
     cardDTO = cardService.createCard(cardDTO);
     URI uri = ServletUriComponentsBuilder.fromCurrentRequest()

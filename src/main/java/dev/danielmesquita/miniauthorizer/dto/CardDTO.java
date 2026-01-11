@@ -7,6 +7,9 @@ import jakarta.validation.constraints.Size;
 public class CardDTO {
   private Long id;
 
+  @NotBlank(message = "Holder name is required")
+  private String cardHolderName;
+
   @Size(min = 3, max = 80, message = "Name must be 10-80 characters")
   @NotBlank(message = "Card number is required")
   private String cardNumber;
@@ -17,39 +20,33 @@ public class CardDTO {
   public CardDTO() {
   }
 
-  public CardDTO(Long id, String cardNumber, String password) {
+  public CardDTO(Long id, String cardHolderName, String cardNumber, String password) {
     this.id = id;
+    this.cardHolderName = cardHolderName;
     this.cardNumber = cardNumber;
     this.password = password;
   }
 
-  public CardDTO(Card entity) {
-    this.id = entity.getId();
-    this.cardNumber = entity.getCardNumber();
-    this.password = entity.getPassword();
+  public CardDTO(Card card) {
+    this.id = card.getId();
+    this.cardHolderName = card.getCardHolderName();
+    this.cardNumber = card.getCardNumber();
+    this.password = card.getPassword();
   }
 
   public Long getId() {
     return id;
   }
 
-  public void setId(Long id) {
-    this.id = id;
+  public String getCardHolderName() {
+    return cardHolderName;
   }
 
   public String getCardNumber() {
     return cardNumber;
   }
 
-  public void setCardNumber(String cardNumber) {
-    this.cardNumber = cardNumber;
-  }
-
   public String getPassword() {
     return password;
-  }
-
-  public void setPassword(String password) {
-    this.password = password;
   }
 }
