@@ -16,6 +16,21 @@ public class CardService {
     this.repository = repository;
   }
 
+  public Card createCard(String cardNumber, String password) {
+    Card card = new Card();
+    card.setCardNumber(cardNumber);
+    card.setPassword(password);
+    card.setBalance(BigDecimal.valueOf(500)); // Initial balance
+
+    return repository.save(card);
+  }
+
+  public BigDecimal getBalance(String cardNumber) {
+    Card card = repository.findByCardNumberForUpdate(cardNumber)
+            .orElseThrow(() -> new IllegalArgumentException("Card not found with number: " + cardNumber));
+    return card.getBalance();
+  }
+
   @Transactional
   public void executeOperation(String cardNumber, String password, BigDecimal value) {
     Card card = repository.findByCardNumberForUpdate(cardNumber)
