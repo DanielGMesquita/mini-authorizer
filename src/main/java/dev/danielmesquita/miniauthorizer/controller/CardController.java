@@ -20,7 +20,7 @@ public class CardController {
     this.cardService = cardService;
   }
 
-  @GetMapping("/{cardNumber}/balance")
+  @GetMapping("/{cardNumber}")
   public ResponseEntity<BigDecimal> balance (@PathVariable String cardNumber) {
     return ResponseEntity.ok(cardService.getBalance(cardNumber));
   }
