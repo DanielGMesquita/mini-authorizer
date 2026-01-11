@@ -1,5 +1,6 @@
 package dev.danielmesquita.miniauthorizer.service;
 
+import dev.danielmesquita.miniauthorizer.dto.CardDTO;
 import dev.danielmesquita.miniauthorizer.entity.Card;
 import dev.danielmesquita.miniauthorizer.repository.CardRepository;
 import org.springframework.stereotype.Service;
@@ -16,13 +17,15 @@ public class CardService {
     this.repository = repository;
   }
 
-  public Card createCard(String cardNumber, String password) {
-    Card card = new Card();
-    card.setCardNumber(cardNumber);
-    card.setPassword(password);
-    card.setBalance(BigDecimal.valueOf(0)); // Initial balance
+  public CardDTO createCard(CardDTO cardDTO) {
+    Card entity = new Card();
+    entity.setCardNumber(cardDTO.getCardNumber());
+    entity.setPassword(cardDTO.getPassword());
+    entity.setBalance(new BigDecimal("0")); // Initial balance
 
-    return repository.save(card);
+    entity = repository.save(entity);
+
+    return new CardDTO(entity);
   }
 
   public BigDecimal getBalance(String cardNumber) {

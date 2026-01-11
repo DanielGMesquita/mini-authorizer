@@ -25,11 +25,20 @@ public class Card {
 
   public Card() {}
 
-  public Card(String cardNumber, String cardHolderName, String password, BigDecimal balance) {
+  public Card(Long id, String cardNumber, String cardHolderName, String password, BigDecimal balance) {
+    this.id = id;
     this.cardNumber = cardNumber;
     this.cardHolderName = cardHolderName;
     this.password = password;
     this.balance = balance;
+  }
+
+  public Long getId() {
+    return id;
+  }
+
+  public void setId(Long id) {
+    this.id = id;
   }
 
   public String getCardNumber() {
