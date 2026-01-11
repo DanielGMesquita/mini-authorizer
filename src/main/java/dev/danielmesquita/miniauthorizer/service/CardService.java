@@ -20,7 +20,7 @@ public class CardService {
     Card card = new Card();
     card.setCardNumber(cardNumber);
     card.setPassword(password);
-    card.setBalance(BigDecimal.valueOf(500)); // Initial balance
+    card.setBalance(BigDecimal.valueOf(0)); // Initial balance
 
     return repository.save(card);
   }
