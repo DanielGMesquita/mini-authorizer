@@ -4,13 +4,12 @@ import dev.danielmesquita.miniauthorizer.dto.CardDTO;
 import dev.danielmesquita.miniauthorizer.entity.Card;
 import dev.danielmesquita.miniauthorizer.exception.CardAlreadyExistsException;
 import dev.danielmesquita.miniauthorizer.repository.CardRepository;
+import java.math.BigDecimal;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.math.BigDecimal;
 
 @Service
 public class CardService {
@@ -28,7 +27,7 @@ public class CardService {
 
   @Transactional
   public CardDTO createCard(CardDTO cardDTO) {
-    boolean exists = repository.findByCardNumberForUpdate(cardDTO.getCardNumber()).isPresent();
+    boolean exists = repository.findByCardNumber(cardDTO.getCardNumber()).isPresent();
     if (exists) {
       throw new CardAlreadyExistsException(
           "Card with number " + cardDTO.getCardNumber() + " already exists.");
@@ -47,14 +46,14 @@ public class CardService {
 
   @Transactional(readOnly = true)
   public BigDecimal getBalance(String cardNumber) {
-    Card card = repository.findByCardNumberForUpdate(cardNumber)
+    Card card = repository.findByCardNumber(cardNumber)
             .orElseThrow(() -> new IllegalArgumentException("Card not found with number: " + cardNumber));
     return card.getBalance();
   }
 
   @Transactional
   public void executeOperation(String cardNumber, String password, BigDecimal value) {
-    Card card = repository.findByCardNumberForUpdate(cardNumber)
+    Card card = repository.findByCardNumber(cardNumber)
             .orElseThrow(() -> new IllegalArgumentException("Card not found with number: " + cardNumber));
 
     if (!card.getPassword().equals(password)) {
