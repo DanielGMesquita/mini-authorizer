@@ -95,6 +95,7 @@ public class CardServiceTests {
   @Test
   public void executeOperationShouldWorkWhenCardExistsAndPasswordIsValidAndSufficientBalance() {
     Mockito.when(repository.findByCardNumber(existingCardNumber)).thenReturn(Optional.of(card));
+    card.setBalance(new BigDecimal("100"));
 
     Assertions.assertDoesNotThrow(
         () -> {
