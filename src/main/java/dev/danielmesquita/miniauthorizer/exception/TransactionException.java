@@ -4,14 +4,14 @@ import dev.danielmesquita.miniauthorizer.enums.TransactionStatus;
 
 public class TransactionException extends RuntimeException {
 
-    private final TransactionStatus status;
+  private final TransactionStatus status;
 
-    public TransactionException(TransactionStatus status) {
-        super(status.name());
-        this.status = status;
-    }
+  public TransactionException(TransactionStatus status) {
+    super(status.getStatus());
+    this.status = status;
+  }
 
-    public TransactionStatus getStatus() {
-        return status;
-    }
+  public TransactionStatus getStatus() {
+    return status;
+  }
 }
