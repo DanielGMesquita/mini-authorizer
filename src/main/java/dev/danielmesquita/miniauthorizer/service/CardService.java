@@ -8,8 +8,6 @@ import dev.danielmesquita.miniauthorizer.exception.ResourceNotFoundException;
 import dev.danielmesquita.miniauthorizer.exception.TransactionException;
 import dev.danielmesquita.miniauthorizer.repository.CardRepository;
 import java.math.BigDecimal;
-import org.springframework.context.annotation.Bean;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,14 +16,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class CardService {
 
   private final CardRepository repository;
+  private final PasswordEncoder passwordEncoder;
 
-  public CardService(CardRepository repository) {
+  public CardService(CardRepository repository, PasswordEncoder passwordEncoder) {
     this.repository = repository;
-  }
-
-  @Bean
-  public PasswordEncoder passwordEncoder() {
-    return new BCryptPasswordEncoder();
+    this.passwordEncoder = passwordEncoder;
   }
 
   @Transactional
@@ -39,7 +34,7 @@ public class CardService {
     Card entity = new Card();
     entity.setCardHolderName(cardDTO.getCardHolderName());
     entity.setCardNumber(cardDTO.getCardNumber());
-    entity.setPassword(passwordEncoder().encode(cardDTO.getPassword()));
+    entity.setPassword(passwordEncoder.encode(cardDTO.getPassword()));
     entity.setBalance(new BigDecimal("0")); // Initial balance
 
     entity = repository.save(entity);
@@ -64,11 +59,11 @@ public class CardService {
             .findByCardNumber(cardNumber)
             .orElseThrow(() -> new TransactionException(TransactionStatus.CARTAO_INEXISTENTE));
 
-    if (!card.getPassword().equals(password)) {
+    if (!passwordEncoder.matches(password, card.getPassword())) {
       throw new TransactionException(TransactionStatus.SENHA_INVALIDA);
     }
 
-    if (card.getBalance().compareTo(value) < 0) {
+    if ((card.getBalance().subtract(value)).compareTo(BigDecimal.ZERO) < 0) {
       throw new TransactionException(TransactionStatus.SALDO_INSUFICIENTE);
     }
 
