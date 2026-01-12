@@ -12,7 +12,6 @@ import java.util.Optional;
 @Repository
 public interface CardRepository extends JpaRepository<Card, Long> {
 
-  @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("SELECT c FROM Card c WHERE c.cardNumber = :number")
   Optional<Card> findByCardNumberForUpdate(String number);
 }
