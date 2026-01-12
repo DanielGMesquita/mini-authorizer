@@ -6,6 +6,7 @@ import dev.danielmesquita.miniauthorizer.exception.CardAlreadyExistsException;
 import dev.danielmesquita.miniauthorizer.exception.ResourceNotFoundException;
 import dev.danielmesquita.miniauthorizer.repository.CardRepository;
 import dev.danielmesquita.miniauthorizer.utils.Factory;
+import java.math.BigDecimal;
 import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -89,5 +90,17 @@ public class CardServiceTests {
         });
 
     Mockito.verify(repository, Mockito.times(1)).findByCardNumber(nonExistingCardNumber);
+  }
+
+  @Test
+  public void executeOperationShouldWorkWhenCardExistsAndPasswordIsValidAndSufficientBalance() {
+    Mockito.when(repository.findByCardNumber(existingCardNumber)).thenReturn(Optional.of(card));
+
+    Assertions.assertDoesNotThrow(
+        () -> {
+          service.executeOperation(existingCardNumber, card.getPassword(), new BigDecimal("50"));
+        });
+
+    Mockito.verify(repository, Mockito.times(1)).findByCardNumber(existingCardNumber);
   }
 }
