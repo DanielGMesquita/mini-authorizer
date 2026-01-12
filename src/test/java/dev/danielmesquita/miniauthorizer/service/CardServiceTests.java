@@ -101,9 +101,9 @@ public class CardServiceTests {
     card.setBalance(new BigDecimal("100"));
 
     Assertions.assertDoesNotThrow(
-        () -> {
-          service.executeOperation(existingCardNumber, card.getPassword(), new BigDecimal("50"));
-        });
+        () ->
+            service.executeTransaction(
+                existingCardNumber, card.getPassword(), new BigDecimal("50")));
 
     Mockito.verify(repository, Mockito.times(1)).findByCardNumber(existingCardNumber);
   }
@@ -116,7 +116,7 @@ public class CardServiceTests {
         Assertions.assertThrows(
             TransactionException.class,
             () ->
-                service.executeOperation(
+                service.executeTransaction(
                     nonExistingCardNumber, card.getPassword(), new BigDecimal("50")));
 
     Assertions.assertEquals(TransactionStatus.CARTAO_INEXISTENTE, exception.getStatus());
@@ -131,7 +131,8 @@ public class CardServiceTests {
         Assertions.assertThrows(
             TransactionException.class,
             () ->
-                service.executeOperation(existingCardNumber, wrongPassword, new BigDecimal("50")));
+                service.executeTransaction(
+                    existingCardNumber, wrongPassword, new BigDecimal("50")));
 
     Assertions.assertEquals(TransactionStatus.SENHA_INVALIDA, exception.getStatus());
   }
@@ -146,7 +147,8 @@ public class CardServiceTests {
         Assertions.assertThrows(
             TransactionException.class,
             () ->
-                service.executeOperation(existingCardNumber, rightPassword, new BigDecimal("50")));
+                service.executeTransaction(
+                    existingCardNumber, rightPassword, new BigDecimal("50")));
 
     Assertions.assertEquals(TransactionStatus.SALDO_INSUFICIENTE, exception.getStatus());
   }

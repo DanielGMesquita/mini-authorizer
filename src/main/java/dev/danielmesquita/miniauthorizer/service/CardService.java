@@ -53,7 +53,7 @@ public class CardService {
   }
 
   @Transactional
-  public void executeOperation(String cardNumber, String password, BigDecimal value) {
+  public void executeTransaction(String cardNumber, String password, BigDecimal value) {
     Card card =
         repository
             .findByCardNumber(cardNumber)
