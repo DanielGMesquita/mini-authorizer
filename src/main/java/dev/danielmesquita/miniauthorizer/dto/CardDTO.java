@@ -21,10 +21,10 @@ public class CardDTO {
 
   private BigDecimal balance;
 
-  public CardDTO() {
-  }
+  public CardDTO() {}
 
-  public CardDTO(Long id, String cardHolderName, String cardNumber, String password, BigDecimal balance) {
+  public CardDTO(
+      Long id, String cardHolderName, String cardNumber, String password, BigDecimal balance) {
     this.id = id;
     this.cardHolderName = cardHolderName;
     this.cardNumber = cardNumber;
@@ -58,5 +58,25 @@ public class CardDTO {
 
   public BigDecimal getBalance() {
     return balance;
+  }
+
+  public void setId(Long id) {
+    this.id = id;
+  }
+
+  public void setCardHolderName(String cardHolderName) {
+    this.cardHolderName = cardHolderName;
+  }
+
+  public void setCardNumber(String cardNumber) {
+    this.cardNumber = cardNumber;
+  }
+
+  public void setPassword(String password) {
+    this.password = password;
+  }
+
+  public void setBalance(BigDecimal balance) {
+    this.balance = balance;
   }
 }
