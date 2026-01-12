@@ -1,6 +1,7 @@
 package dev.danielmesquita.miniauthorizer.service;
 
 import dev.danielmesquita.miniauthorizer.dto.CardDTO;
+import dev.danielmesquita.miniauthorizer.dto.TransactionDTO;
 import dev.danielmesquita.miniauthorizer.entity.Card;
 import dev.danielmesquita.miniauthorizer.enums.TransactionStatus;
 import dev.danielmesquita.miniauthorizer.exception.CardAlreadyExistsException;
@@ -35,11 +36,11 @@ public class CardServiceTests {
 
   private final String rightPassword = "password123";
 
-  private final String wrongPassword = "wrongPassword";
-
   private Card card = new Card();
 
   private CardDTO cardDTO = new CardDTO();
+
+  private TransactionDTO transactionDTO = new TransactionDTO();
 
   @BeforeEach
   public void setUp() {
@@ -47,6 +48,9 @@ public class CardServiceTests {
     nonExistingCardNumber = "111";
     card = Factory.createCard();
     cardDTO = Factory.createCardDTO();
+    transactionDTO.setCardNumber(existingCardNumber);
+    transactionDTO.setPassword(rightPassword);
+    transactionDTO.setValue(new BigDecimal("50"));
   }
 
   @Test
@@ -100,10 +104,7 @@ public class CardServiceTests {
     Mockito.when(repository.findByCardNumber(existingCardNumber)).thenReturn(Optional.of(card));
     card.setBalance(new BigDecimal("100"));
 
-    Assertions.assertDoesNotThrow(
-        () ->
-            service.executeTransaction(
-                existingCardNumber, card.getPassword(), new BigDecimal("50")));
+    Assertions.assertDoesNotThrow(() -> service.executeTransaction(transactionDTO));
 
     Mockito.verify(repository, Mockito.times(1)).findByCardNumber(existingCardNumber);
   }
@@ -111,13 +112,11 @@ public class CardServiceTests {
   @Test
   public void executeOperationShouldThrowExceptionWhenCardDoesNotExist() {
     Mockito.when(repository.findByCardNumber(nonExistingCardNumber)).thenReturn(Optional.empty());
+    transactionDTO.setCardNumber(nonExistingCardNumber);
 
     TransactionException exception =
         Assertions.assertThrows(
-            TransactionException.class,
-            () ->
-                service.executeTransaction(
-                    nonExistingCardNumber, card.getPassword(), new BigDecimal("50")));
+            TransactionException.class, () -> service.executeTransaction(transactionDTO));
 
     Assertions.assertEquals(TransactionStatus.CARTAO_INEXISTENTE, exception.getStatus());
   }
@@ -125,14 +124,13 @@ public class CardServiceTests {
   @Test
   public void executeOperationShouldThrowExceptionWhenPasswordIsInvalid() {
     Mockito.when(repository.findByCardNumber(existingCardNumber)).thenReturn(Optional.of(card));
+    String wrongPassword = "wrongPassword";
     Mockito.when(passwordEncoder.matches(wrongPassword, card.getPassword())).thenReturn(false);
+    transactionDTO.setPassword(wrongPassword);
 
     TransactionException exception =
         Assertions.assertThrows(
-            TransactionException.class,
-            () ->
-                service.executeTransaction(
-                    existingCardNumber, wrongPassword, new BigDecimal("50")));
+            TransactionException.class, () -> service.executeTransaction(transactionDTO));
 
     Assertions.assertEquals(TransactionStatus.SENHA_INVALIDA, exception.getStatus());
   }
@@ -145,10 +143,7 @@ public class CardServiceTests {
 
     TransactionException exception =
         Assertions.assertThrows(
-            TransactionException.class,
-            () ->
-                service.executeTransaction(
-                    existingCardNumber, rightPassword, new BigDecimal("50")));
+            TransactionException.class, () -> service.executeTransaction(transactionDTO));
 
     Assertions.assertEquals(TransactionStatus.SALDO_INSUFICIENTE, exception.getStatus());
   }
