@@ -135,4 +135,19 @@ public class CardServiceTests {
 
     Assertions.assertEquals(TransactionStatus.SENHA_INVALIDA, exception.getStatus());
   }
+
+  @Test
+  public void executeOperationShouldThrowExceptionWhenInsufficientBalance() {
+    Mockito.when(repository.findByCardNumber(existingCardNumber)).thenReturn(Optional.of(card));
+    Mockito.when(passwordEncoder.matches(rightPassword, card.getPassword())).thenReturn(true);
+    card.setBalance(new BigDecimal("20"));
+
+    TransactionException exception =
+        Assertions.assertThrows(
+            TransactionException.class,
+            () ->
+                service.executeOperation(existingCardNumber, rightPassword, new BigDecimal("50")));
+
+    Assertions.assertEquals(TransactionStatus.SALDO_INSUFICIENTE, exception.getStatus());
+  }
 }
