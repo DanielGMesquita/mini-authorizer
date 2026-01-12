@@ -18,6 +18,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
 public class CardServiceTests {
@@ -26,9 +27,15 @@ public class CardServiceTests {
 
   @Mock private CardRepository repository;
 
+  @Mock private PasswordEncoder passwordEncoder;
+
   private String existingCardNumber;
 
   private String nonExistingCardNumber;
+
+  private final String rightPassword = "password123";
+
+  private final String wrongPassword = "wrongPassword";
 
   private Card card = new Card();
 
@@ -89,6 +96,7 @@ public class CardServiceTests {
 
   @Test
   public void executeOperationShouldWorkWhenCardExistsAndPasswordIsValidAndSufficientBalance() {
+    Mockito.when(passwordEncoder.matches(rightPassword, card.getPassword())).thenReturn(true);
     Mockito.when(repository.findByCardNumber(existingCardNumber)).thenReturn(Optional.of(card));
     card.setBalance(new BigDecimal("100"));
 
@@ -109,8 +117,22 @@ public class CardServiceTests {
             TransactionException.class,
             () ->
                 service.executeOperation(
-                    existingCardNumber, card.getPassword(), new BigDecimal("50")));
+                    nonExistingCardNumber, card.getPassword(), new BigDecimal("50")));
 
     Assertions.assertEquals(TransactionStatus.CARTAO_INEXISTENTE, exception.getStatus());
+  }
+
+  @Test
+  public void executeOperationShouldThrowExceptionWhenPasswordIsInvalid() {
+    Mockito.when(repository.findByCardNumber(existingCardNumber)).thenReturn(Optional.of(card));
+    Mockito.when(passwordEncoder.matches(wrongPassword, card.getPassword())).thenReturn(false);
+
+    TransactionException exception =
+        Assertions.assertThrows(
+            TransactionException.class,
+            () ->
+                service.executeOperation(existingCardNumber, wrongPassword, new BigDecimal("50")));
+
+    Assertions.assertEquals(TransactionStatus.SENHA_INVALIDA, exception.getStatus());
   }
 }
