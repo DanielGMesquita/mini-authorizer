@@ -26,6 +26,7 @@ public class CardRepositoryTest {
   @Test
   public void saveShouldPersistCardWithAutoIncrementWhenIdIsNull() {
     card.setId(null);
+    card.setCardNumber(existingCardNumber);
     card = repository.save(card);
     Assertions.assertNotNull(card);
     Assertions.assertNotNull(card.getId());
