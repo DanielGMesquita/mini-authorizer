@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -24,7 +25,7 @@ public class ControllerExceptionHandler {
 
   @ExceptionHandler(CardAlreadyExistsException.class)
   public ResponseEntity<CustomError> cardAlreadyExists(
-          CardAlreadyExistsException e, HttpServletRequest request) {
+      CardAlreadyExistsException e, HttpServletRequest request) {
     HttpStatus status = HttpStatus.UNPROCESSABLE_CONTENT;
     CustomError error =
         new CustomError(Instant.now(), 422, e.getMessage(), request.getRequestURI());
@@ -33,10 +34,22 @@ public class ControllerExceptionHandler {
 
   @ExceptionHandler(TransactionException.class)
   public ResponseEntity<CustomError> databaseException(
-          TransactionException e, HttpServletRequest request) {
+      TransactionException e, HttpServletRequest request) {
     HttpStatus status = HttpStatus.UNPROCESSABLE_CONTENT;
     CustomError error =
-            new CustomError(Instant.now(), 422, e.getMessage(), request.getRequestURI());
+        new CustomError(Instant.now(), 422, e.getMessage(), request.getRequestURI());
     return ResponseEntity.status(status).body(error);
+  }
+
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<CustomError> handleValidationException(
+          MethodArgumentNotValidException ex, HttpServletRequest request) {
+    String errorMessage = ex.getBindingResult().getFieldErrors().stream()
+            .map(fieldError -> fieldError.getField() + ": " + fieldError.getDefaultMessage())
+            .findFirst()
+            .orElse("Validation error");
+    CustomError error = new CustomError(
+            Instant.now(), 400, errorMessage, request.getRequestURI());
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
   }
 }
