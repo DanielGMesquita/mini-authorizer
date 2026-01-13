@@ -1,6 +1,7 @@
 package dev.danielmesquita.miniauthorizer.controller;
 
 import dev.danielmesquita.miniauthorizer.dto.CardDTO;
+import dev.danielmesquita.miniauthorizer.dto.TransactionDTO;
 import dev.danielmesquita.miniauthorizer.service.CardService;
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
@@ -10,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
-@RequestMapping("/cards")
+@RequestMapping
 public class CardController {
 
   private final CardService cardService;
@@ -19,12 +20,12 @@ public class CardController {
     this.cardService = cardService;
   }
 
-  @GetMapping("/{cardNumber}")
+  @GetMapping("/cards/{cardNumber}")
   public ResponseEntity<BigDecimal> balance(@PathVariable String cardNumber) {
     return ResponseEntity.ok(cardService.getBalance(cardNumber));
   }
 
-  @PostMapping
+  @PostMapping("/cards")
   public ResponseEntity<CardDTO> createCard(@Valid @RequestBody CardDTO cardDTO) {
     cardDTO = cardService.createCard(cardDTO);
     URI uri =
@@ -33,5 +34,12 @@ public class CardController {
             .buildAndExpand(cardDTO.getCardNumber())
             .toUri();
     return ResponseEntity.created(uri).body(cardDTO);
+  }
+
+  @PostMapping("/transactions")
+  public ResponseEntity<CardDTO> processTransaction(
+      @Valid @RequestBody TransactionDTO transactionDTO) {
+    CardDTO cardDTO = cardService.executeTransaction(transactionDTO);
+    return ResponseEntity.ok().body(cardDTO);
   }
 }
