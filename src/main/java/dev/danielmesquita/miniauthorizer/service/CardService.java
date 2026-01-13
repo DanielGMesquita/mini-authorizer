@@ -1,6 +1,7 @@
 package dev.danielmesquita.miniauthorizer.service;
 
 import dev.danielmesquita.miniauthorizer.dto.CardDTO;
+import dev.danielmesquita.miniauthorizer.dto.TransactionDTO;
 import dev.danielmesquita.miniauthorizer.entity.Card;
 import dev.danielmesquita.miniauthorizer.enums.TransactionStatus;
 import dev.danielmesquita.miniauthorizer.exception.CardAlreadyExistsException;
@@ -53,21 +54,25 @@ public class CardService {
   }
 
   @Transactional
-  public void executeTransaction(String cardNumber, String password, BigDecimal value) {
+  public void executeTransaction(TransactionDTO transactionDTO) {
     Card card =
         repository
-            .findByCardNumber(cardNumber)
+            .findByCardNumber(transactionDTO.getCardNumber())
             .orElseThrow(() -> new TransactionException(TransactionStatus.CARTAO_INEXISTENTE));
 
-    if (!passwordEncoder.matches(password, card.getPassword())) {
+    if (!passwordEncoder.matches(transactionDTO.getPassword(), card.getPassword())) {
       throw new TransactionException(TransactionStatus.SENHA_INVALIDA);
     }
 
-    if ((card.getBalance().subtract(value)).compareTo(BigDecimal.ZERO) < 0) {
+    BigDecimal value = transactionDTO.getValue();
+    BigDecimal balance = card.getBalance();
+    BigDecimal newBalance = balance.subtract(value);
+
+    if ((newBalance).compareTo(BigDecimal.ZERO) < 0) {
       throw new TransactionException(TransactionStatus.SALDO_INSUFICIENTE);
     }
 
-    card.setBalance(card.getBalance().subtract(value));
+    card.setBalance(newBalance);
     repository.save(card);
   }
 }
