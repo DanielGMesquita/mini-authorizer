@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import dev.danielmesquita.miniauthorizer.dto.CardDTO;
+import dev.danielmesquita.miniauthorizer.exception.CardAlreadyExistsException;
 import dev.danielmesquita.miniauthorizer.service.CardService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -58,5 +59,50 @@ public class CardControllerTests {
             .andExpect(status().isCreated());
 
     resultActions.andExpect(jsonPath("$.cardNumber").value(cardDTO.getCardNumber()));
+  }
+
+  @Test
+  public void createCardShouldReturnBadRequestWhenCardNumberAlreadyExists() throws Exception {
+    Mockito.when(service.createCard(Mockito.any(CardDTO.class)))
+        .thenThrow(
+            new CardAlreadyExistsException(
+                "Card with number " + cardDTO.getCardNumber() + " already exists."));
+    String jsonBody = objectMapper.writeValueAsString(cardDTO);
+
+    mockMvc
+        .perform(
+            post("/cards")
+                .content(jsonBody)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isUnprocessableContent());
+  }
+
+  @Test
+  public void createCardShouldReturnBadRequestWhenCardNumberIsBlank() throws Exception {
+    cardDTO.setCardNumber("");
+    String jsonBody = objectMapper.writeValueAsString(cardDTO);
+
+    mockMvc
+        .perform(
+            post("/cards")
+                .content(jsonBody)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  public void createCardShouldReturnBadRequestWhenCardHolderNameIsBlank() throws Exception {
+    cardDTO.setCardHolderName("");
+    String jsonBody = objectMapper.writeValueAsString(cardDTO);
+
+    mockMvc
+        .perform(
+            post("/cards")
+                .content(jsonBody)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isBadRequest());
   }
 }
