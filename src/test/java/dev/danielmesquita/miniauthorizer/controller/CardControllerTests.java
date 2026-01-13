@@ -167,4 +167,22 @@ public class CardControllerTests {
                 .with(httpBasic(existingCardNumber, wrongPassword)))
         .andExpect(status().isUnauthorized());
   }
+
+  @Test
+  public void transactionShouldReturnCardDTOWhenPasswordIsRight() throws Exception {
+    when(service.executeTransaction(Mockito.any(TransactionDTO.class))).thenReturn(cardDTO);
+    String jsonBody = objectMapper.writeValueAsString(transactionDTO);
+
+    ResultActions resultActions =
+        mockMvc
+            .perform(
+                post("/transactions")
+                    .content(jsonBody)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .with(httpBasic(existingCardNumber, rightPassword)))
+            .andExpect(status().isOk());
+
+    resultActions.andExpect(jsonPath("$.cardNumber").value(cardDTO.getCardNumber()));
+  }
 }
