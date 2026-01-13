@@ -3,11 +3,9 @@ package dev.danielmesquita.miniauthorizer.dto;
 import dev.danielmesquita.miniauthorizer.entity.Card;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-
 import java.math.BigDecimal;
 
 public class CardDTO {
-  private Long id;
 
   @NotBlank(message = "Holder name is required")
   private String cardHolderName;
@@ -23,9 +21,7 @@ public class CardDTO {
 
   public CardDTO() {}
 
-  public CardDTO(
-      Long id, String cardHolderName, String cardNumber, String password, BigDecimal balance) {
-    this.id = id;
+  public CardDTO(String cardHolderName, String cardNumber, String password, BigDecimal balance) {
     this.cardHolderName = cardHolderName;
     this.cardNumber = cardNumber;
     this.password = password;
@@ -33,15 +29,10 @@ public class CardDTO {
   }
 
   public CardDTO(Card entity) {
-    this.id = entity.getId();
     this.cardHolderName = entity.getCardHolderName();
     this.cardNumber = entity.getCardNumber();
     this.password = entity.getPassword();
     this.balance = entity.getBalance();
-  }
-
-  public Long getId() {
-    return id;
   }
 
   public String getCardHolderName() {
@@ -56,14 +47,6 @@ public class CardDTO {
     return password;
   }
 
-  public BigDecimal getBalance() {
-    return balance;
-  }
-
-  public void setId(Long id) {
-    this.id = id;
-  }
-
   public void setCardHolderName(String cardHolderName) {
     this.cardHolderName = cardHolderName;
   }
@@ -74,6 +57,10 @@ public class CardDTO {
 
   public void setPassword(String password) {
     this.password = password;
+  }
+
+  public BigDecimal getBalance() {
+    return balance;
   }
 
   public void setBalance(BigDecimal balance) {
