@@ -200,4 +200,75 @@ public class CardControllerTests {
                 .with(httpBasic(existingCardNumber, rightPassword)))
         .andExpect(status().isBadRequest());
   }
+
+  @Test
+  public void transactionShouldReturnBadRequestWhenValueIsNull() throws Exception {
+    transactionDTO.setValue(null);
+    String jsonBody = objectMapper.writeValueAsString(transactionDTO);
+
+    mockMvc
+        .perform(
+            post("/transactions")
+                .content(jsonBody)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .with(httpBasic(existingCardNumber, rightPassword)))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  public void transactionShouldReturnUnauthorizedPasswordIsBlank() throws Exception {
+    String jsonBody = objectMapper.writeValueAsString(transactionDTO);
+
+    mockMvc
+        .perform(
+            post("/transactions")
+                .content(jsonBody)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .with(httpBasic(existingCardNumber, "")))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  public void transactionShouldReturnUnauthorizedWhenUsernameIsBlank() throws Exception {
+    String jsonBody = objectMapper.writeValueAsString(transactionDTO);
+
+    mockMvc
+        .perform(
+            post("/transactions")
+                .content(jsonBody)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .with(httpBasic("", rightPassword)))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  public void transactionShouldReturnBadRequestWhenValueIsZero() throws Exception {
+    transactionDTO.setValue(BigDecimal.ZERO);
+    String jsonBody = objectMapper.writeValueAsString(transactionDTO);
+
+    mockMvc
+        .perform(
+            post("/transactions")
+                .content(jsonBody)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .with(httpBasic(existingCardNumber, rightPassword)))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  public void createCardShouldReturnUnauthorizedWhenNoCredentials() throws Exception {
+    String jsonBody = objectMapper.writeValueAsString(cardDTO);
+
+    mockMvc
+        .perform(
+            post("/cards")
+                .content(jsonBody)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isUnauthorized());
+  }
 }

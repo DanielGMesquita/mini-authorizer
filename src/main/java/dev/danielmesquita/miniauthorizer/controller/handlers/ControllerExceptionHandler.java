@@ -4,7 +4,6 @@ import dev.danielmesquita.miniauthorizer.dto.CustomError;
 import dev.danielmesquita.miniauthorizer.exception.CardAlreadyExistsException;
 import dev.danielmesquita.miniauthorizer.exception.ResourceNotFoundException;
 import dev.danielmesquita.miniauthorizer.exception.TransactionException;
-import dev.danielmesquita.miniauthorizer.exception.UnauthorizedException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import org.springframework.http.HttpStatus;
@@ -52,13 +51,5 @@ public class ControllerExceptionHandler {
             .orElse("Validation error");
     CustomError error = new CustomError(Instant.now(), 400, errorMessage, request.getRequestURI());
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
-  }
-
-  @ExceptionHandler(UnauthorizedException.class)
-  public ResponseEntity<CustomError> handleUnauthorized(
-      UnauthorizedException e, HttpServletRequest request) {
-    CustomError error =
-        new CustomError(Instant.now(), 401, e.getMessage(), request.getRequestURI());
-    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
   }
 }
