@@ -185,4 +185,19 @@ public class CardControllerTests {
 
     resultActions.andExpect(jsonPath("$.cardNumber").value(cardDTO.getCardNumber()));
   }
+
+  @Test
+  public void transactionShouldReturnBadRequestWhenValueIsNegative() throws Exception {
+    transactionDTO.setValue(new BigDecimal("-10.00"));
+    String jsonBody = objectMapper.writeValueAsString(transactionDTO);
+
+    mockMvc
+        .perform(
+            post("/transactions")
+                .content(jsonBody)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .with(httpBasic(existingCardNumber, rightPassword)))
+        .andExpect(status().isBadRequest());
+  }
 }
