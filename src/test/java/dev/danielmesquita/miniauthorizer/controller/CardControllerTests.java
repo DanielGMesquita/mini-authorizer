@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import dev.danielmesquita.miniauthorizer.config.CustomAuthenticationEntryPoint;
 import dev.danielmesquita.miniauthorizer.config.SecurityConfig;
 import dev.danielmesquita.miniauthorizer.dto.CardDTO;
 import dev.danielmesquita.miniauthorizer.dto.TransactionDTO;
@@ -13,6 +14,7 @@ import dev.danielmesquita.miniauthorizer.entity.Card;
 import dev.danielmesquita.miniauthorizer.exception.CardAlreadyExistsException;
 import dev.danielmesquita.miniauthorizer.repository.CardRepository;
 import dev.danielmesquita.miniauthorizer.service.CardService;
+import dev.danielmesquita.miniauthorizer.service.CustomAuthenticationProvider;
 import dev.danielmesquita.miniauthorizer.service.CustomUserDetailsService;
 import java.math.BigDecimal;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,7 +35,7 @@ import tools.jackson.databind.ObjectMapper;
 
 @WebMvcTest(CardController.class)
 @AutoConfigureMockMvc
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, CustomAuthenticationEntryPoint.class})
 public class CardControllerTests {
 
   @Autowired private MockMvc mockMvc;
@@ -44,6 +46,8 @@ public class CardControllerTests {
 
   @MockitoBean CustomUserDetailsService userDetailsService;
 
+  @MockitoBean private CustomAuthenticationProvider customAuthenticationProvider;
+
   @Autowired private ObjectMapper objectMapper;
 
   private CardDTO cardDTO;
@@ -51,9 +55,8 @@ public class CardControllerTests {
   private TransactionDTO transactionDTO;
 
   private final String existingCardNumber = "1234567890123456";
-  private String nonExistingCardNumber = "0000000000000000";
-  private String rightPassword = "password123";
-  private String encryptedPassword = new BCryptPasswordEncoder().encode(rightPassword);
+  private final String rightPassword = "password123";
+  private final String encryptedPassword = new BCryptPasswordEncoder().encode(rightPassword);
 
   @BeforeEach
   public void setUp() {
@@ -149,6 +152,7 @@ public class CardControllerTests {
 
   @Test
   public void transactionShouldReturnUnauthorizedWhenPasswordIsWrong() throws Exception {
+    String nonExistingCardNumber = "0000000000000000";
     when(userDetailsService.loadUserByUsername(nonExistingCardNumber))
         .thenThrow(UsernameNotFoundException.class);
     String jsonBody = objectMapper.writeValueAsString(transactionDTO);
