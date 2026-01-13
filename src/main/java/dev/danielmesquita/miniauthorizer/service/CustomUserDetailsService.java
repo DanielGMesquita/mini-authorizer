@@ -1,8 +1,10 @@
 package dev.danielmesquita.miniauthorizer.service;
 
-import dev.danielmesquita.miniauthorizer.entity.Card;
-import dev.danielmesquita.miniauthorizer.repository.CardRepository;
-import org.springframework.security.core.userdetails.User;
+import dev.danielmesquita.miniauthorizer.entity.Role;
+import dev.danielmesquita.miniauthorizer.entity.User;
+import dev.danielmesquita.miniauthorizer.projection.UserDetailsProjection;
+import dev.danielmesquita.miniauthorizer.repository.UserRepository;
+import java.util.List;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -10,22 +12,32 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
-  private final CardRepository cardRepository;
 
-  public CustomUserDetailsService(CardRepository cardRepository) {
-    this.cardRepository = cardRepository;
+  private final UserRepository userRepository;
+
+  public CustomUserDetailsService(UserRepository userRepository) {
+    this.userRepository = userRepository;
   }
 
   @Override
   public UserDetails loadUserByUsername(String username) {
-    Card card =
-        cardRepository
-            .findByCardNumber(username)
-            .orElseThrow(() -> new UsernameNotFoundException("Card not found"));
-    return User.builder()
-        .username(card.getCardNumber())
-        .password(card.getPassword())
-        .roles("USER")
-        .build();
+    List<UserDetailsProjection> result = userRepository.findUserDetailsByEmail(username);
+    if (result.isEmpty()) {
+      throw new UsernameNotFoundException("User not found with email: " + username);
+    }
+    User user = new User();
+    user.setEmail(username);
+    user.setPassword(result.getFirst().getPassword());
+    result.stream()
+        .map(
+            projection -> {
+              Role role = new Role();
+              role.setId(projection.getRoleId());
+              role.setAuthority(projection.getAuthority());
+              return role;
+            })
+        .forEach(user::addRole);
+
+    return user;
   }
 }
