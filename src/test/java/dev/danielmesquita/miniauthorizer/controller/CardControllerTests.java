@@ -1,52 +1,89 @@
 package dev.danielmesquita.miniauthorizer.controller;
 
+import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import dev.danielmesquita.miniauthorizer.config.SecurityConfig;
 import dev.danielmesquita.miniauthorizer.dto.CardDTO;
+import dev.danielmesquita.miniauthorizer.dto.TransactionDTO;
+import dev.danielmesquita.miniauthorizer.entity.Card;
 import dev.danielmesquita.miniauthorizer.exception.CardAlreadyExistsException;
+import dev.danielmesquita.miniauthorizer.repository.CardRepository;
 import dev.danielmesquita.miniauthorizer.service.CardService;
+import dev.danielmesquita.miniauthorizer.service.CustomUserDetailsService;
+import java.math.BigDecimal;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import tools.jackson.databind.ObjectMapper;
 
 @WebMvcTest(CardController.class)
-@AutoConfigureMockMvc(addFilters = false)
+@AutoConfigureMockMvc
+@Import(SecurityConfig.class)
 public class CardControllerTests {
 
   @Autowired private MockMvc mockMvc;
 
   @MockitoBean private CardService service;
 
+  @MockitoBean CardRepository cardRepository;
+
+  @MockitoBean CustomUserDetailsService userDetailsService;
+
   @Autowired private ObjectMapper objectMapper;
 
   private CardDTO cardDTO;
 
-  private String existingCardNumber = "1234567890123456";
+  private TransactionDTO transactionDTO;
+
+  private final String existingCardNumber = "1234567890123456";
   private String nonExistingCardNumber = "0000000000000000";
   private String rightPassword = "password123";
-  private String wrongPassword = "wrongpassword";
+  private String encryptedPassword = new BCryptPasswordEncoder().encode(rightPassword);
 
   @BeforeEach
   public void setUp() {
+
+    Card card = new Card();
+    card.setCardNumber(existingCardNumber);
+    card.setPassword(encryptedPassword);
+    card.setCardHolderName("Daniel Mesquita");
+    Mockito.when(userDetailsService.loadUserByUsername(existingCardNumber))
+        .thenReturn(
+            User.builder()
+                .username(card.getCardNumber())
+                .password(card.getPassword())
+                .roles("USER")
+                .build());
+
     cardDTO = new CardDTO();
     cardDTO.setCardNumber(existingCardNumber);
     cardDTO.setPassword(rightPassword);
     cardDTO.setCardHolderName("Daniel Mesquita");
+
+    transactionDTO = new TransactionDTO();
+    transactionDTO.setCardNumber(existingCardNumber);
+    transactionDTO.setPassword(rightPassword);
+    transactionDTO.setValue(new BigDecimal("50.00"));
   }
 
   @Test
   public void createCardShouldReturnCardDTOCreated() throws Exception {
-    Mockito.when(service.createCard(Mockito.any(CardDTO.class))).thenReturn(cardDTO);
+    when(service.createCard(Mockito.any(CardDTO.class))).thenReturn(cardDTO);
     String jsonBody = objectMapper.writeValueAsString(cardDTO);
 
     ResultActions resultActions =
@@ -55,7 +92,8 @@ public class CardControllerTests {
                 post("/cards")
                     .content(jsonBody)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .accept(MediaType.APPLICATION_JSON))
+                    .accept(MediaType.APPLICATION_JSON)
+                    .with(httpBasic(cardDTO.getCardNumber(), cardDTO.getPassword())))
             .andExpect(status().isCreated());
 
     resultActions.andExpect(jsonPath("$.cardNumber").value(cardDTO.getCardNumber()));
@@ -63,7 +101,7 @@ public class CardControllerTests {
 
   @Test
   public void createCardShouldReturnBadRequestWhenCardNumberAlreadyExists() throws Exception {
-    Mockito.when(service.createCard(Mockito.any(CardDTO.class)))
+    when(service.createCard(Mockito.any(CardDTO.class)))
         .thenThrow(
             new CardAlreadyExistsException(
                 "Card with number " + cardDTO.getCardNumber() + " already exists."));
@@ -74,7 +112,8 @@ public class CardControllerTests {
             post("/cards")
                 .content(jsonBody)
                 .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON))
+                .accept(MediaType.APPLICATION_JSON)
+                .with(httpBasic(existingCardNumber, rightPassword)))
         .andExpect(status().isUnprocessableContent());
   }
 
@@ -88,7 +127,8 @@ public class CardControllerTests {
             post("/cards")
                 .content(jsonBody)
                 .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON))
+                .accept(MediaType.APPLICATION_JSON)
+                .with(httpBasic(existingCardNumber, rightPassword)))
         .andExpect(status().isBadRequest());
   }
 
@@ -102,7 +142,25 @@ public class CardControllerTests {
             post("/cards")
                 .content(jsonBody)
                 .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON))
+                .accept(MediaType.APPLICATION_JSON)
+                .with(httpBasic(existingCardNumber, rightPassword)))
         .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  public void transactionShouldReturnUnauthorizedWhenPasswordIsWrong() throws Exception {
+    when(userDetailsService.loadUserByUsername(nonExistingCardNumber))
+        .thenThrow(UsernameNotFoundException.class);
+    String jsonBody = objectMapper.writeValueAsString(transactionDTO);
+
+    String wrongPassword = "wrongpassword";
+    mockMvc
+        .perform(
+            post("/transactions")
+                .content(jsonBody)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .with(httpBasic(existingCardNumber, wrongPassword)))
+        .andExpect(status().isUnauthorized());
   }
 }
