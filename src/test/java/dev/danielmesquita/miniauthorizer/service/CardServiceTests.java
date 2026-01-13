@@ -40,7 +40,7 @@ public class CardServiceTests {
 
   private CardDTO cardDTO = new CardDTO();
 
-  private TransactionDTO transactionDTO = new TransactionDTO();
+  private final TransactionDTO transactionDTO = new TransactionDTO();
 
   @BeforeEach
   public void setUp() {

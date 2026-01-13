@@ -36,7 +36,7 @@ public class CardService {
     entity.setCardHolderName(cardDTO.getCardHolderName());
     entity.setCardNumber(cardDTO.getCardNumber());
     entity.setPassword(passwordEncoder.encode(cardDTO.getPassword()));
-    entity.setBalance(new BigDecimal("0")); // Initial balance
+    entity.setBalance(new BigDecimal("500")); // Initial balance
 
     entity = repository.save(entity);
 
@@ -54,7 +54,7 @@ public class CardService {
   }
 
   @Transactional
-  public void executeTransaction(TransactionDTO transactionDTO) {
+  public CardDTO executeTransaction(TransactionDTO transactionDTO) {
     Card card =
         repository
             .findByCardNumber(transactionDTO.getCardNumber())
@@ -74,5 +74,7 @@ public class CardService {
 
     card.setBalance(newBalance);
     repository.save(card);
+
+    return new CardDTO(card);
   }
 }
