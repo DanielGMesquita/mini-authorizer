@@ -148,9 +148,8 @@ Run all tests:
 mvn test
 ```
 
-## Default Users (see `import.sql`)
+## Default User (see `import.sql`)
 - **Maria Brown** — maria@gmail.com / (bcrypt hash in import.sql)
-- **Alex Green** — alex@gmail.com / (bcrypt hash in import.sql)
 
 ## Design Patterns, Architectural Decisions & Good Practices
 
