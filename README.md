@@ -121,6 +121,27 @@ docker-compose up -d
 mvn spring-boot:run
 ```
 
+## Running with Docker Compose
+
+You can run the full stack (MySQL + application) using Docker Compose:
+
+1. Build the application jar:
+   ```bash
+   mvn clean package -DskipTests
+   ```
+2. Start the stack:
+   ```bash
+   docker-compose up --build
+   ```
+3. The API will be available at [http://localhost:8080](http://localhost:8080)
+
+- MySQL data is persisted in a Docker volume (`db_data`).
+- The application runs with the `dev` profile and connects to the MySQL container.
+- To stop and remove containers/volumes:
+   ```bash
+   docker-compose down -v
+   ```
+
 ## Testing
 Run all tests:
 ```bash

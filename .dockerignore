@@ -1,0 +1,11 @@
+# .dockerignore for MiniAuthorizer
+/.idea/
+*.iml
+*.log
+*.md
+*.db
+*.h2.db
+*.DS_Store
+.git
+.gitignore
+.env
