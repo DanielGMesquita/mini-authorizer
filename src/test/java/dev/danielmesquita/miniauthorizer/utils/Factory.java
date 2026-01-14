@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 
 public class Factory {
   public static Card createCard() {
-    return new Card(null, null, "Joao da Silva", "password123", BigDecimal.valueOf(0L));
+    return new Card(null, null, "password123", BigDecimal.valueOf(0L));
   }
 
   public static CardDTO createCardDTO() {

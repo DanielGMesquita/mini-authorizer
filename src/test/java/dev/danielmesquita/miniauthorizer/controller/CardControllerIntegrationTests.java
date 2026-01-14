@@ -79,7 +79,6 @@ public class CardControllerIntegrationTests {
     cardDTO = new CardDTO();
     cardDTO.setCardNumber("1234567890123456");
     cardDTO.setPassword(rightPassword);
-    cardDTO.setCardHolderName("Daniel Mesquita");
   }
 
   @Test

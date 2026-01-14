@@ -7,9 +7,6 @@ import java.math.BigDecimal;
 
 public class CardDTO {
 
-  @NotBlank(message = "Holder name is required")
-  private String cardHolderName;
-
   @Size(min = 3, max = 80, message = "Name must be 10-80 characters")
   @NotBlank(message = "Card number is required")
   private String cardNumber;
@@ -21,22 +18,16 @@ public class CardDTO {
 
   public CardDTO() {}
 
-  public CardDTO(String cardHolderName, String cardNumber, String password, BigDecimal balance) {
-    this.cardHolderName = cardHolderName;
+  public CardDTO(String cardNumber, String password, BigDecimal balance) {
     this.cardNumber = cardNumber;
     this.password = password;
     this.balance = balance;
   }
 
   public CardDTO(Card entity) {
-    this.cardHolderName = entity.getCardHolderName();
     this.cardNumber = entity.getCardNumber();
     this.password = entity.getPassword();
     this.balance = entity.getBalance();
-  }
-
-  public String getCardHolderName() {
-    return cardHolderName;
   }
 
   public String getCardNumber() {
@@ -45,10 +36,6 @@ public class CardDTO {
 
   public String getPassword() {
     return password;
-  }
-
-  public void setCardHolderName(String cardHolderName) {
-    this.cardHolderName = cardHolderName;
   }
 
   public void setCardNumber(String cardNumber) {

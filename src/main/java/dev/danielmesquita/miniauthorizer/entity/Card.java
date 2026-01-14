@@ -1,7 +1,6 @@
 package dev.danielmesquita.miniauthorizer.entity;
 
 import jakarta.persistence.*;
-
 import java.math.BigDecimal;
 import java.util.Objects;
 
@@ -16,8 +15,6 @@ public class Card {
   @Column(nullable = false, unique = true)
   private String cardNumber;
 
-  private String cardHolderName;
-
   private String password;
 
   @Column(nullable = false)
@@ -25,10 +22,9 @@ public class Card {
 
   public Card() {}
 
-  public Card(Long id, String cardNumber, String cardHolderName, String password, BigDecimal balance) {
+  public Card(Long id, String cardNumber, String password, BigDecimal balance) {
     this.id = id;
     this.cardNumber = cardNumber;
-    this.cardHolderName = cardHolderName;
     this.password = password;
     this.balance = balance;
   }
@@ -47,14 +43,6 @@ public class Card {
 
   public void setCardNumber(String cardNumber) {
     this.cardNumber = cardNumber;
-  }
-
-  public String getCardHolderName() {
-    return cardHolderName;
-  }
-
-  public void setCardHolderName(String cardHolderName) {
-    this.cardHolderName = cardHolderName;
   }
 
   public String getPassword() {

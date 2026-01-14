@@ -31,7 +31,6 @@ public class CardServiceIntegrationTests {
     CardDTO cardDTO = new CardDTO();
     cardDTO.setCardNumber(cardNumber);
     cardDTO.setPassword(password);
-    cardDTO.setCardHolderName("Test");
     cardService.createCard(cardDTO);
   }
 

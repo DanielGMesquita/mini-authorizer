@@ -77,7 +77,6 @@ public class CardControllerTests {
     cardDTO = new CardDTO();
     cardDTO.setCardNumber(existingCardNumber);
     cardDTO.setPassword(rightPassword);
-    cardDTO.setCardHolderName("Daniel Mesquita");
 
     transactionDTO = new TransactionDTO();
     transactionDTO.setCardNumber(existingCardNumber);
@@ -124,21 +123,6 @@ public class CardControllerTests {
   @Test
   public void createCardShouldReturnBadRequestWhenCardNumberIsBlank() throws Exception {
     cardDTO.setCardNumber("");
-    String jsonBody = objectMapper.writeValueAsString(cardDTO);
-
-    mockMvc
-        .perform(
-            post("/cards")
-                .content(jsonBody)
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .with(httpBasic(rightUsername, rightUserPassword)))
-        .andExpect(status().isBadRequest());
-  }
-
-  @Test
-  public void createCardShouldReturnBadRequestWhenCardHolderNameIsBlank() throws Exception {
-    cardDTO.setCardHolderName("");
     String jsonBody = objectMapper.writeValueAsString(cardDTO);
 
     mockMvc

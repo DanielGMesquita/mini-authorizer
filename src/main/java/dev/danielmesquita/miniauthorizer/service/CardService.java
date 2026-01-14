@@ -33,7 +33,6 @@ public class CardService {
     }
 
     Card entity = new Card();
-    entity.setCardHolderName(cardDTO.getCardHolderName());
     entity.setCardNumber(cardDTO.getCardNumber());
     entity.setPassword(passwordEncoder.encode(cardDTO.getPassword()));
     entity.setBalance(new BigDecimal("500")); // Initial balance

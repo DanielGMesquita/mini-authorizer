@@ -1,7 +1,6 @@
 CREATE TABLE tb_card (
                          id BIGINT AUTO_INCREMENT PRIMARY KEY,
                          balance NUMERIC(38,2) NOT NULL,
-                         card_holder_name VARCHAR(255),
                          card_number VARCHAR(255) NOT NULL UNIQUE,
                          password VARCHAR(255)
 );
@@ -32,4 +31,4 @@ INSERT INTO tb_role (authority) VALUES ('ROLE_CLIENT');
 INSERT INTO tb_role (authority) VALUES ('ROLE_ADMIN');
 
 INSERT INTO tb_user_role (user_id, role_id) VALUES (1, 1);
-INSERT INTO tb_user_role (user_id, role_id) VALUES (2, 1);
+INSERT INTO tb_user_role (user_id, role_id) VALUES (1, 2);
