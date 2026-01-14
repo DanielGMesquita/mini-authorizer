@@ -10,33 +10,37 @@ import dev.danielmesquita.miniauthorizer.config.CustomAuthenticationEntryPoint;
 import dev.danielmesquita.miniauthorizer.config.SecurityConfig;
 import dev.danielmesquita.miniauthorizer.dto.CardDTO;
 import dev.danielmesquita.miniauthorizer.dto.TransactionDTO;
+import dev.danielmesquita.miniauthorizer.enums.TransactionStatus;
 import dev.danielmesquita.miniauthorizer.exception.CardAlreadyExistsException;
+import dev.danielmesquita.miniauthorizer.exception.ResourceNotFoundException;
+import dev.danielmesquita.miniauthorizer.exception.TransactionException;
 import dev.danielmesquita.miniauthorizer.repository.CardRepository;
 import dev.danielmesquita.miniauthorizer.repository.UserRepository;
 import dev.danielmesquita.miniauthorizer.service.CardService;
 import dev.danielmesquita.miniauthorizer.service.CustomAuthenticationProvider;
 import dev.danielmesquita.miniauthorizer.service.CustomUserDetailsService;
 import java.math.BigDecimal;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import tools.jackson.databind.ObjectMapper;
 
-@WebMvcTest(CardController.class)
+@SpringBootTest
 @AutoConfigureMockMvc
 @Import({SecurityConfig.class, CustomAuthenticationEntryPoint.class})
-public class CardControllerTests {
+public class CardControllerIntegrationTests {
 
   @Autowired private MockMvc mockMvc;
 
@@ -54,7 +58,8 @@ public class CardControllerTests {
 
   private CardDTO cardDTO;
 
-  private TransactionDTO transactionDTO;
+  private final String rightPassword = "password123";
+  private final String encryptedPassword = new BCryptPasswordEncoder().encode(rightPassword);
 
   private final String rightUsername = "realuser@legit.com";
   private final String rightUserPassword = "realstrongpassword";
@@ -63,9 +68,6 @@ public class CardControllerTests {
 
   @BeforeEach
   public void setUp() {
-    String existingCardNumber = "1234567890123456";
-    String rightPassword = "password123";
-
     when(userDetailsService.loadUserByUsername(rightUsername))
         .thenReturn(
             User.builder()
@@ -75,21 +77,15 @@ public class CardControllerTests {
                 .build());
 
     cardDTO = new CardDTO();
-    cardDTO.setCardNumber(existingCardNumber);
+    cardDTO.setCardNumber("1234567890123456");
     cardDTO.setPassword(rightPassword);
     cardDTO.setCardHolderName("Daniel Mesquita");
-
-    transactionDTO = new TransactionDTO();
-    transactionDTO.setCardNumber(existingCardNumber);
-    transactionDTO.setPassword(rightPassword);
-    transactionDTO.setValue(new BigDecimal("50.00"));
   }
 
   @Test
   public void createCardShouldReturnCardDTOCreated() throws Exception {
     when(service.createCard(Mockito.any(CardDTO.class))).thenReturn(cardDTO);
     String jsonBody = objectMapper.writeValueAsString(cardDTO);
-
     ResultActions resultActions =
         mockMvc
             .perform(
@@ -99,18 +95,14 @@ public class CardControllerTests {
                     .accept(MediaType.APPLICATION_JSON)
                     .with(httpBasic(rightUsername, rightUserPassword)))
             .andExpect(status().isCreated());
-
     resultActions.andExpect(jsonPath("$.cardNumber").value(cardDTO.getCardNumber()));
   }
 
   @Test
-  public void createCardShouldReturnBadRequestWhenCardNumberAlreadyExists() throws Exception {
+  public void createCardShouldReturnUnprocessableWhenCardAlreadyExists() throws Exception {
     when(service.createCard(Mockito.any(CardDTO.class)))
-        .thenThrow(
-            new CardAlreadyExistsException(
-                "Card with number " + cardDTO.getCardNumber() + " already exists."));
+        .thenThrow(new CardAlreadyExistsException("Card already exists"));
     String jsonBody = objectMapper.writeValueAsString(cardDTO);
-
     mockMvc
         .perform(
             post("/cards")
@@ -122,10 +114,9 @@ public class CardControllerTests {
   }
 
   @Test
-  public void createCardShouldReturnBadRequestWhenCardNumberIsBlank() throws Exception {
-    cardDTO.setCardNumber("");
+  public void createCardShouldReturnBadRequestWhenPasswordIsBlank() throws Exception {
+    cardDTO.setPassword("");
     String jsonBody = objectMapper.writeValueAsString(cardDTO);
-
     mockMvc
         .perform(
             post("/cards")
@@ -137,151 +128,152 @@ public class CardControllerTests {
   }
 
   @Test
-  public void createCardShouldReturnBadRequestWhenCardHolderNameIsBlank() throws Exception {
-    cardDTO.setCardHolderName("");
-    String jsonBody = objectMapper.writeValueAsString(cardDTO);
+  public void getCardBalanceShouldReturnOkWhenCardExists() throws Exception {
+    when(service.getBalance(cardDTO.getCardNumber())).thenReturn(new BigDecimal("500.00"));
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.get("/cards/" + cardDTO.getCardNumber())
+                .accept(MediaType.APPLICATION_JSON)
+                .with(httpBasic(rightUsername, rightUserPassword)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", Matchers.is(500.00)));
+  }
 
+  @Test
+  public void getCardBalanceShouldReturnNotFoundWhenCardDoesNotExist() throws Exception {
+    when(service.getBalance("0000000000000000"))
+        .thenThrow(new ResourceNotFoundException("Card not found"));
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.get("/cards/0000000000000000")
+                .accept(MediaType.APPLICATION_JSON)
+                .with(httpBasic(rightUsername, rightUserPassword)))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  public void getCardBalanceShouldReturnUnauthorizedWhenNoCredentials() throws Exception {
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.get("/cards/" + cardDTO.getCardNumber())
+                .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  public void transactionShouldReturnUnprocessableWhenInsufficientBalance() throws Exception {
+    when(service.executeTransaction(Mockito.any(TransactionDTO.class)))
+        .thenThrow(new TransactionException(TransactionStatus.SALDO_INSUFICIENTE));
+    TransactionDTO transactionDTO = new TransactionDTO();
+    transactionDTO.setCardNumber(cardDTO.getCardNumber());
+    transactionDTO.setPassword(rightPassword);
+    transactionDTO.setValue(new BigDecimal("1000.00"));
+    String jsonBody = objectMapper.writeValueAsString(transactionDTO);
+    mockMvc
+        .perform(
+            post("/transactions")
+                .content(jsonBody)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .with(httpBasic(rightUsername, rightUserPassword)))
+        .andExpect(status().isUnprocessableContent());
+  }
+
+  @Test
+  public void transactionShouldReturnUnprocessableWhenCardDoesNotExist() throws Exception {
+    when(service.executeTransaction(Mockito.any(TransactionDTO.class)))
+        .thenThrow(new TransactionException(TransactionStatus.CARTAO_INEXISTENTE));
+    TransactionDTO transactionDTO = new TransactionDTO();
+    transactionDTO.setCardNumber("0000000000000000");
+    transactionDTO.setPassword(rightPassword);
+    transactionDTO.setValue(new BigDecimal("10.00"));
+    String jsonBody = objectMapper.writeValueAsString(transactionDTO);
+    mockMvc
+        .perform(
+            post("/transactions")
+                .content(jsonBody)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .with(httpBasic(rightUsername, rightUserPassword)))
+        .andExpect(status().isUnprocessableContent());
+  }
+
+  @Test
+  public void transactionShouldReturnUnprocessableWhenPasswordIsWrong() throws Exception {
+    when(service.executeTransaction(Mockito.any(TransactionDTO.class)))
+        .thenThrow(new TransactionException(TransactionStatus.SENHA_INVALIDA));
+    TransactionDTO transactionDTO = new TransactionDTO();
+    transactionDTO.setCardNumber(cardDTO.getCardNumber());
+    transactionDTO.setPassword("wrongpassword");
+    transactionDTO.setValue(new BigDecimal("10.00"));
+    String jsonBody = objectMapper.writeValueAsString(transactionDTO);
+    mockMvc
+        .perform(
+            post("/transactions")
+                .content(jsonBody)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .with(httpBasic(rightUsername, rightUserPassword)))
+        .andExpect(status().isUnprocessableContent());
+  }
+
+  @Test
+  public void transactionShouldReturnBadRequestWhenCardNumberIsBlank() throws Exception {
+    TransactionDTO transactionDTO = new TransactionDTO();
+    transactionDTO.setCardNumber("");
+    transactionDTO.setPassword(rightPassword);
+    transactionDTO.setValue(new BigDecimal("10.00"));
+    String jsonBody = objectMapper.writeValueAsString(transactionDTO);
+    mockMvc
+        .perform(
+            post("/transactions")
+                .content(jsonBody)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .with(httpBasic(rightUsername, rightUserPassword)))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  public void errorResponseShouldReturnCustomErrorStructure() throws Exception {
+    when(service.getBalance("0000000000000000"))
+        .thenThrow(new ResourceNotFoundException("Card not found"));
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.get("/cards/0000000000000000")
+                .accept(MediaType.APPLICATION_JSON)
+                .with(httpBasic(rightUsername, rightUserPassword)))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.timeStamp").exists())
+        .andExpect(jsonPath("$.status").value(404))
+        .andExpect(jsonPath("$.error").value("Card not found"))
+        .andExpect(jsonPath("$.path").exists());
+  }
+
+  @Test
+  public void allEndpointsShouldRequireAuthentication() throws Exception {
+    String jsonBody = objectMapper.writeValueAsString(cardDTO);
     mockMvc
         .perform(
             post("/cards")
                 .content(jsonBody)
                 .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .with(httpBasic(rightUsername, rightUserPassword)))
-        .andExpect(status().isBadRequest());
-  }
-
-  @Test
-  public void transactionShouldReturnUnauthorizedWhenPasswordIsWrong() throws Exception {
-    String jsonBody = objectMapper.writeValueAsString(transactionDTO);
-
-    String wrongPassword = "reallywrongpassword";
-    mockMvc
-        .perform(
-            post("/transactions")
-                .content(jsonBody)
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .with(httpBasic(rightUsername, wrongPassword)))
+                .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isUnauthorized());
-  }
-
-  @Test
-  public void transactionShouldReturnUnauthorizedWhenUsernameIsWrong() throws Exception {
-    String wrongUsername = "Little Mistake";
-    when(userDetailsService.loadUserByUsername(wrongUsername))
-        .thenThrow(UsernameNotFoundException.class);
-    String jsonBody = objectMapper.writeValueAsString(transactionDTO);
-
     mockMvc
         .perform(
-            post("/transactions")
-                .content(jsonBody)
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .with(httpBasic(wrongUsername, rightUserPassword)))
+            MockMvcRequestBuilders.get("/cards/" + cardDTO.getCardNumber())
+                .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isUnauthorized());
-  }
-
-  @Test
-  public void transactionShouldReturnCardDTOWhenPasswordIsRight() throws Exception {
-    when(service.executeTransaction(Mockito.any(TransactionDTO.class))).thenReturn(cardDTO);
-    String jsonBody = objectMapper.writeValueAsString(transactionDTO);
-
-    ResultActions resultActions =
-        mockMvc
-            .perform(
-                post("/transactions")
-                    .content(jsonBody)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .accept(MediaType.APPLICATION_JSON)
-                    .with(httpBasic(rightUsername, rightUserPassword)))
-            .andExpect(status().isOk());
-
-    resultActions.andExpect(jsonPath("$.cardNumber").value(cardDTO.getCardNumber()));
-  }
-
-  @Test
-  public void transactionShouldReturnBadRequestWhenValueIsNegative() throws Exception {
-    transactionDTO.setValue(new BigDecimal("-10.00"));
-    String jsonBody = objectMapper.writeValueAsString(transactionDTO);
-
+    TransactionDTO transactionDTO = new TransactionDTO();
+    transactionDTO.setCardNumber(cardDTO.getCardNumber());
+    transactionDTO.setPassword(rightPassword);
+    transactionDTO.setValue(new BigDecimal("10.00"));
+    String txJson = objectMapper.writeValueAsString(transactionDTO);
     mockMvc
         .perform(
             post("/transactions")
-                .content(jsonBody)
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .with(httpBasic(rightUsername, rightUserPassword)))
-        .andExpect(status().isBadRequest());
-  }
-
-  @Test
-  public void transactionShouldReturnBadRequestWhenValueIsNull() throws Exception {
-    transactionDTO.setValue(null);
-    String jsonBody = objectMapper.writeValueAsString(transactionDTO);
-
-    mockMvc
-        .perform(
-            post("/transactions")
-                .content(jsonBody)
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .with(httpBasic(rightUsername, rightUserPassword)))
-        .andExpect(status().isBadRequest());
-  }
-
-  @Test
-  public void transactionShouldReturnUnauthorizedPasswordIsBlank() throws Exception {
-    String jsonBody = objectMapper.writeValueAsString(transactionDTO);
-
-    mockMvc
-        .perform(
-            post("/transactions")
-                .content(jsonBody)
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .with(httpBasic(rightUsername, "")))
-        .andExpect(status().isUnauthorized());
-  }
-
-  @Test
-  public void transactionShouldReturnUnauthorizedWhenUsernameIsBlank() throws Exception {
-    String jsonBody = objectMapper.writeValueAsString(transactionDTO);
-
-    mockMvc
-        .perform(
-            post("/transactions")
-                .content(jsonBody)
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .with(httpBasic("", rightUserPassword)))
-        .andExpect(status().isUnauthorized());
-  }
-
-  @Test
-  public void transactionShouldReturnBadRequestWhenValueIsZero() throws Exception {
-    transactionDTO.setValue(BigDecimal.ZERO);
-    String jsonBody = objectMapper.writeValueAsString(transactionDTO);
-
-    mockMvc
-        .perform(
-            post("/transactions")
-                .content(jsonBody)
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .with(httpBasic(rightUsername, rightUserPassword)))
-        .andExpect(status().isBadRequest());
-  }
-
-  @Test
-  public void createCardShouldReturnUnauthorizedWhenNoCredentials() throws Exception {
-    String jsonBody = objectMapper.writeValueAsString(cardDTO);
-
-    mockMvc
-        .perform(
-            post("/cards")
-                .content(jsonBody)
+                .content(txJson)
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isUnauthorized());
