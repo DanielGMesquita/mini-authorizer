@@ -1,5 +1,6 @@
 package dev.danielmesquita.miniauthorizer.service;
 
+import dev.danielmesquita.miniauthorizer.entity.Role;
 import dev.danielmesquita.miniauthorizer.entity.User;
 import dev.danielmesquita.miniauthorizer.projection.UserDetailsProjection;
 import dev.danielmesquita.miniauthorizer.repository.UserRepository;
@@ -27,6 +28,15 @@ public class CustomUserDetailsService implements UserDetailsService {
     User user = new User();
     user.setEmail(username);
     user.setPassword(result.getFirst().getPassword());
+    result.stream()
+        .map(
+            projection -> {
+              Role role = new Role();
+              role.setId(projection.getRoleId());
+              role.setAuthority(projection.getAuthority());
+              return role;
+            })
+        .forEach(user::addRole);
 
     return user;
   }
