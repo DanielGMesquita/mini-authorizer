@@ -17,6 +17,52 @@ A Spring Boot REST API for card management and transaction authorization, inspir
 - Centralized exception handling via `@ControllerAdvice`
 - Unit & integration tests for controllers, services, and repositories
 
+## Profiles & Environments
+
+This project uses Spring profiles to separate configuration for different environments:
+
+### Available Profiles
+- **dev** (default):
+  - Uses MySQL (see `application-dev.properties`)
+  - Connects to the MySQL instance defined in `docker-compose.yaml`
+  - Use for local development with persistent data
+- **test**:
+  - Uses H2 in-memory database (see `application-test.properties`)
+  - Used automatically when running tests
+  - Data is ephemeral and reset between test runs
+
+### How to Select a Profile
+- The active profile is set in `application.properties`:
+  - `spring.profiles.active=${APP_PROFILE:dev}`
+  - By default, the `dev` profile is used unless you set the `APP_PROFILE` environment variable.
+- To run with a specific profile:
+  - Set the environment variable: `export APP_PROFILE=test` (Linux/macOS) or `set APP_PROFILE=test` (Windows)
+  - Or pass as a JVM argument: `-Dspring.profiles.active=test`
+
+### Running in Each Environment
+
+#### Development (MySQL)
+1. Start MySQL with Docker Compose:
+   ```bash
+   docker-compose up -d
+   ```
+2. Run the application (default profile is `dev`):
+   ```bash
+   mvn spring-boot:run
+   ```
+   - Uses `application-dev.properties` for MySQL connection.
+
+#### Testing (H2)
+- Run tests (automatically uses `test` profile and H2):
+  ```bash
+  mvn test
+  ```
+- You can also run the app with H2 for local testing:
+  ```bash
+  export APP_PROFILE=test
+  mvn spring-boot:run
+  ```
+
 ## Endpoints
 
 ### Authentication
@@ -53,8 +99,8 @@ A transaction is authorized if:
 - `test/` — Unit and integration tests
 
 ## Database
-- **H2**: Used by default for development and tests. Console at `/h2-console`.
-- **MySQL**: Provided via Docker Compose (`docker-compose.yaml`).
+- **H2**: Used by default for tests and optionally for local development. Console at `/h2-console`.
+- **MySQL**: Provided via Docker Compose (`docker-compose.yaml`). Used in `dev` profile.
 - Initial users and roles are loaded from `import.sql`.
 
 ## Running the Application
@@ -63,15 +109,16 @@ A transaction is authorized if:
 - Java 21
 - Maven 3.8+
 
-### Start with H2 (default)
+### Start with H2 (test profile)
 ```bash
+export APP_PROFILE=test
 mvn spring-boot:run
 ```
 
-### Start with MySQL (Docker Compose)
+### Start with MySQL (dev profile, default)
 ```bash
 docker-compose up -d
-# Then configure `application.properties` to use MySQL
+mvn spring-boot:run
 ```
 
 ## Testing
@@ -111,5 +158,3 @@ mvn test
 - **Test Driven Development:** Create tests before implementation for some methods and classes
 
 ---
-
-Replace your existing `README.md` with this version to reflect the latest changes.
