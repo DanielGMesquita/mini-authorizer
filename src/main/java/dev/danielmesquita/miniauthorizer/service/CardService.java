@@ -9,6 +9,7 @@ import dev.danielmesquita.miniauthorizer.exception.ResourceNotFoundException;
 import dev.danielmesquita.miniauthorizer.exception.TransactionException;
 import dev.danielmesquita.miniauthorizer.repository.CardRepository;
 import java.math.BigDecimal;
+import java.util.Optional;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,10 +27,9 @@ public class CardService {
 
   @Transactional
   public CardDTO createCard(CardDTO cardDTO) {
-    boolean exists = repository.findByCardNumber(cardDTO.getCardNumber()).isPresent();
-    if (exists) {
-      throw new CardAlreadyExistsException(
-          "Card with number " + cardDTO.getCardNumber() + " already exists.");
+    Optional<Card> existing = repository.findByCardNumberForUpdate(cardDTO.getCardNumber());
+    if (existing.isPresent()) {
+      throw new CardAlreadyExistsException("Card number already exists");
     }
 
     Card entity = new Card();
@@ -57,7 +57,7 @@ public class CardService {
   public CardDTO executeTransaction(TransactionDTO transactionDTO) {
     Card card =
         repository
-            .findByCardNumber(transactionDTO.getCardNumber())
+            .findByCardNumberForUpdate(transactionDTO.getCardNumber())
             .orElseThrow(() -> new TransactionException(TransactionStatus.CARTAO_INEXISTENTE));
 
     if (!passwordEncoder.matches(transactionDTO.getPassword(), card.getPassword())) {
