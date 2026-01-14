@@ -69,11 +69,12 @@ public class CardServiceTests {
   @Test
   public void createCardShouldThrowExceptionWhenCardNumberExists() {
     cardDTO.setCardNumber(existingCardNumber);
-    Mockito.when(repository.findByCardNumber(existingCardNumber)).thenReturn(Optional.of(card));
+    Mockito.when(repository.findByCardNumberForUpdate(existingCardNumber))
+        .thenReturn(Optional.of(card));
 
     Assertions.assertThrows(CardAlreadyExistsException.class, () -> service.createCard(cardDTO));
 
-    Mockito.verify(repository, Mockito.times(1)).findByCardNumber(existingCardNumber);
+    Mockito.verify(repository, Mockito.times(1)).findByCardNumberForUpdate(existingCardNumber);
   }
 
   @Test
@@ -101,17 +102,19 @@ public class CardServiceTests {
   @Test
   public void executeOperationShouldWorkWhenCardExistsAndPasswordIsValidAndSufficientBalance() {
     Mockito.when(passwordEncoder.matches(rightPassword, card.getPassword())).thenReturn(true);
-    Mockito.when(repository.findByCardNumber(existingCardNumber)).thenReturn(Optional.of(card));
+    Mockito.when(repository.findByCardNumberForUpdate(existingCardNumber))
+        .thenReturn(Optional.of(card));
     card.setBalance(new BigDecimal("100"));
 
     Assertions.assertDoesNotThrow(() -> service.executeTransaction(transactionDTO));
 
-    Mockito.verify(repository, Mockito.times(1)).findByCardNumber(existingCardNumber);
+    Mockito.verify(repository, Mockito.times(1)).findByCardNumberForUpdate(existingCardNumber);
   }
 
   @Test
   public void executeOperationShouldThrowExceptionWhenCardDoesNotExist() {
-    Mockito.when(repository.findByCardNumber(nonExistingCardNumber)).thenReturn(Optional.empty());
+    Mockito.when(repository.findByCardNumberForUpdate(nonExistingCardNumber))
+        .thenReturn(Optional.empty());
     transactionDTO.setCardNumber(nonExistingCardNumber);
 
     TransactionException exception =
@@ -123,7 +126,8 @@ public class CardServiceTests {
 
   @Test
   public void executeOperationShouldThrowExceptionWhenPasswordIsInvalid() {
-    Mockito.when(repository.findByCardNumber(existingCardNumber)).thenReturn(Optional.of(card));
+    Mockito.when(repository.findByCardNumberForUpdate(existingCardNumber))
+        .thenReturn(Optional.of(card));
     String wrongPassword = "wrongPassword";
     Mockito.when(passwordEncoder.matches(wrongPassword, card.getPassword())).thenReturn(false);
     transactionDTO.setPassword(wrongPassword);
@@ -137,7 +141,8 @@ public class CardServiceTests {
 
   @Test
   public void executeOperationShouldThrowExceptionWhenInsufficientBalance() {
-    Mockito.when(repository.findByCardNumber(existingCardNumber)).thenReturn(Optional.of(card));
+    Mockito.when(repository.findByCardNumberForUpdate(existingCardNumber))
+        .thenReturn(Optional.of(card));
     Mockito.when(passwordEncoder.matches(rightPassword, card.getPassword())).thenReturn(true);
     card.setBalance(new BigDecimal("20"));
 

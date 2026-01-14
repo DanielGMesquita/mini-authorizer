@@ -6,8 +6,10 @@ import java.util.Optional;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.test.context.ActiveProfiles;
 
 @DataJpaTest
+@ActiveProfiles("test")
 public class CardRepositoryTest {
 
   @Autowired private CardRepository repository;
@@ -43,6 +45,20 @@ public class CardRepositoryTest {
     card.setCardNumber(existingCardNumber);
     repository.save(card);
     Optional<Card> result = repository.findByCardNumber(existingCardNumber);
+    Assertions.assertTrue(result.isPresent());
+  }
+
+  @Test
+  public void findByCardNumberForUpdateShouldReturnEmptyOptionalWhenCardNumberDoesNotExist() {
+    Optional<Card> result = repository.findByCardNumberForUpdate(nonExistingCardNumber);
+    Assertions.assertTrue(result.isEmpty());
+  }
+
+  @Test
+  public void findByCardNumberForUpdateShouldReturnNonEmptyOptionalWhenCardNumberExists() {
+    card.setCardNumber(existingCardNumber);
+    repository.save(card);
+    Optional<Card> result = repository.findByCardNumberForUpdate(existingCardNumber);
     Assertions.assertTrue(result.isPresent());
   }
 }
